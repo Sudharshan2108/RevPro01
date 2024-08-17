@@ -1,0 +1,12 @@
+import pandas as pd
+import json
+
+# Load customers.json
+with open('customers.json', 'r') as file:
+    customers_data = json.load(file)
+customers_df = pd.DataFrame(customers_data)
+
+# Load transaction_log.json
+with open('transaction_log.json', 'r') as file:
+    transactions_data = json.load(file)
+transactions_df = pd.DataFrame(transactions_data)
