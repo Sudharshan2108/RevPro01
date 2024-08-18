@@ -90,3 +90,25 @@ conn = mysql.connector.connect(
     # Commit the transaction
     conn.commit()
     print("Transaction committed successfully.")
+
+
+# View the contents of the Customers table
+    print("\nCustomers Table:")
+    cursor.execute("SELECT * FROM Customers LIMIT 10")
+    customers_records = cursor.fetchall()
+    for record in customers_records:
+        print(record)
+
+    # View the contents of the Products table
+    print("\nProducts Table:")
+    cursor.execute("SELECT * FROM Products LIMIT 10")
+    products_records = cursor.fetchall()
+    for record in products_records:
+        print(record)
+
+    # View the contents of the Transactions table
+    print("\nTransactions Table:")
+    cursor.execute("SELECT * FROM Transactions LIMIT 10")
+    transactions_records = cursor.fetchall()
+    for record in transactions_records:
+        print(record)
