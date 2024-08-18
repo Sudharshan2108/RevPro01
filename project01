@@ -57,3 +57,36 @@ conn = mysql.connector.connect(
         FOREIGN KEY (product_id) REFERENCES Products(product_id)
     )
     """)
+
+
+ # Normalize Customers Table by removing duplicates based on 'customer_id'
+    customers_normalized_df = customers_df.drop_duplicates(subset='customer_id')
+    
+    # Normalize Products Table by removing duplicates based on 'product_id'
+    products_normalized_df = transactions_df[['product_id', 'product_name', 'product_category']].drop_duplicates()
+   
+    # Normalize Transactions Table by ensuring no duplicates based on 'order_id'
+    transactions_normalized_df = transactions_df.drop_duplicates(subset='order_id')
+# Insert data into the Products table
+    for _, row in products_normalized_df.iterrows():
+        cursor.execute("""
+        INSERT IGNORE INTO Products (product_id, product_name, product_category)
+        VALUES (%s, %s, %s)
+        """, (row['product_id'], row['product_name'], row['product_category']))
+    print("Products data inserted.")
+
+    # Insert data into the Transactions table
+    for _, row in transactions_normalized_df.iterrows():
+        cursor.execute("""
+        INSERT IGNORE INTO Transactions (order_id, customer_id, product_id, qty, price, datetime, 
+                                         ecommerce_website_name, payment_type, payment_txn_id, 
+                                         payment_txn_success, failure_reason)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (row['order_id'], row['customer_id'], row['product_id'], row['qty'], row['price'], 
+              row['datetime'], row['ecommerce_website_name'], row['payment_type'], row['payment_txn_id'], 
+              row['payment_txn_success'], row['failure_reason']))
+    print("Transactions data inserted.")
+
+    # Commit the transaction
+    conn.commit()
+    print("Transaction committed successfully.")
