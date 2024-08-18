@@ -10,3 +10,50 @@ customers_df = pd.DataFrame(customers_data)
 with open('transaction_log.json', 'r') as file:
     transactions_data = json.load(file)
 transactions_df = pd.DataFrame(transactions_data)
+
+#Establishing Connection
+conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="revatureproject01"
+    )
+    cursor = conn.cursor()
+
+# Create tables if they do not exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Customers (
+        customer_id INT PRIMARY KEY,
+        customer_name VARCHAR(255),
+        country VARCHAR(255),
+        city VARCHAR(255)
+    )
+    """)
+    print("Customers table created or already exists.")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Products (
+        product_id INT PRIMARY KEY,
+        product_name VARCHAR(255),
+        product_category VARCHAR(255)
+    )
+    """)
+    print("Products table created or already exists.")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Transactions (
+        order_id INT PRIMARY KEY,
+        customer_id INT,
+        product_id INT,
+        qty INT,
+        price DECIMAL(10, 2),
+        datetime DATETIME,
+        ecommerce_website_name VARCHAR(255),
+        payment_type VARCHAR(255),
+        payment_txn_id VARCHAR(255),
+        payment_txn_success CHAR(1),
+        failure_reason VARCHAR(255),
+        FOREIGN KEY (customer_id) REFERENCES Customers(customer_id),
+        FOREIGN KEY (product_id) REFERENCES Products(product_id)
+    )
+    """)
