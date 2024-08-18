@@ -1,26 +1,35 @@
+import mysql.connector
 import pandas as pd
 import json
 
-# Load customers.json
-with open('customers.json', 'r') as file:
-    customers_data = json.load(file)
-customers_df = pd.DataFrame(customers_data)
+try:
 
-# Load transaction_log.json
-with open('transaction_log.json', 'r') as file:
-    transactions_data = json.load(file)
-transactions_df = pd.DataFrame(transactions_data)
 
-#Establishing Connection
-conn = mysql.connector.connect(
+    
+    # Establish MySQL connection
+    print("Connecting to the database...")
+    conn = mysql.connector.connect(
         host="localhost",
         user="root",
         password="",
         database="revatureproject01"
     )
     cursor = conn.cursor()
+    print("Connected successfully.")
+    # Extracting Datas by loading the json files....
+    # Load customers.json and transactions_log.json
+    print("Loading JSON data...")
+    with open('customers.json', 'r') as file:
+        customers_data = json.load(file)
+    customers_df = pd.DataFrame(customers_data)
 
-# Create tables if they do not exist
+    with open('transaction_logs.json', 'r') as file:
+        transactions_data = json.load(file)
+    transactions_df = pd.DataFrame(transactions_data)
+    print("JSON data loaded successfully.")
+    
+
+    # Create tables if they do not exist
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS Customers (
         customer_id INT PRIMARY KEY,
@@ -57,17 +66,31 @@ conn = mysql.connector.connect(
         FOREIGN KEY (product_id) REFERENCES Products(product_id)
     )
     """)
+    print("Transactions table created or already exists.")
 
+   
 
- # Normalize Customers Table by removing duplicates based on 'customer_id'
+    # Normalize Customers Table by removing duplicates based on 'customer_id'
     customers_normalized_df = customers_df.drop_duplicates(subset='customer_id')
-    
+    print(f"Customers normalized: {len(customers_normalized_df)} records")
+
     # Normalize Products Table by removing duplicates based on 'product_id'
     products_normalized_df = transactions_df[['product_id', 'product_name', 'product_category']].drop_duplicates()
-   
+    print(f"Products normalized: {len(products_normalized_df)} records")
+
     # Normalize Transactions Table by ensuring no duplicates based on 'order_id'
     transactions_normalized_df = transactions_df.drop_duplicates(subset='order_id')
-# Insert data into the Products table
+    print(f"Transactions normalized: {len(transactions_normalized_df)} records")
+
+    # Insert data into the Customers table
+    for _, row in customers_normalized_df.iterrows():
+        cursor.execute("""
+        INSERT IGNORE INTO Customers (customer_id, customer_name, country, city)
+        VALUES (%s, %s, %s, %s)
+        """, (row['customer_id'], row['customer_name'], row['country'], row['city']))
+    print("Customers data inserted.")
+
+    # Insert data into the Products table
     for _, row in products_normalized_df.iterrows():
         cursor.execute("""
         INSERT IGNORE INTO Products (product_id, product_name, product_category)
@@ -91,8 +114,8 @@ conn = mysql.connector.connect(
     conn.commit()
     print("Transaction committed successfully.")
 
-
-# View the contents of the Customers table
+    
+     # View the contents of the Customers table
     print("\nCustomers Table:")
     cursor.execute("SELECT * FROM Customers LIMIT 10")
     customers_records = cursor.fetchall()
@@ -112,3 +135,17 @@ conn = mysql.connector.connect(
     transactions_records = cursor.fetchall()
     for record in transactions_records:
         print(record)
+
+
+except mysql.connector.Error as err:
+    print(f"Error: {err}")
+    conn.rollback()  # Rollback in case of error
+    print("Transaction rolled back due to error.")
+
+finally:
+    # Close the connection
+    if cursor:
+        cursor.close()
+    if conn:
+        conn.close()
+    print("Database connection closed.")
